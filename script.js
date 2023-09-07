@@ -1,5 +1,5 @@
-const cnv = document.getElementById('canvas');
-const ctx = cnv.getContext('2d');
+const cnv = document.getElementById("canvas");
+const ctx = cnv.getContext("2d");
 
 cnv.width = 1000;
 cnv.height = 800;
@@ -11,30 +11,31 @@ const fMin = 0.001;
 const fMax = 0.01;
 const segmentNum = 100;
 const yOffset = 600;
-const ballColor = '#3e236e';
-const duneColor = '#c2b280';
+const ballColor = "orange";
+const duneColor = "#c2b280";
 
 let timeout = 0;
 let waves = [];
 let gameWindow = { x: 0, y: 0 };
 
-document.addEventListener('mousedown', () => {
+document.addEventListener("mousedown", () => {
   ball.gravity += ball.gravityIncrease;
 });
 
-document.addEventListener('mouseup', () => {
+document.addEventListener("mouseup", () => {
   ball.gravity -= ball.gravityIncrease;
 });
 
 let ball = {
   x: 100,
-  y: 630,
+  y: 400,
   r: 30,
   gravity: 0.1,
   gravityIncrease: 0.3,
   vx: 0,
-  vy: 10,
+  vy: 5,
   mass: 5,
+  state: false,
 
   draw() {
     this.move();
@@ -57,10 +58,13 @@ let ball = {
 
   checkCollision() {
     const pointNum = 10;
-    let collision;
     let deepestPoint;
+    let collision;
 
-    if (Math.abs(evaluateWaves(this.x - this.r) - this.y) > this.r * 2 && Math.abs(evaluateWaves(this.x + this.r) - this.y) > this.r * 2) {
+    if (
+      Math.abs(evaluateWaves(this.x - this.r) - this.y) > this.r * 2 &&
+      Math.abs(evaluateWaves(this.x + this.r) - this.y) > this.r * 2
+    ) {
       return;
     }
 
@@ -74,11 +78,16 @@ let ball = {
       const waveHeight = evaluateWaves(currentPoint.x);
 
       if (currentPoint.y > waveHeight) {
+        state === "landing" ? "rolling" : "landing";
         collision = true;
       }
 
       if (!deepestPoint || deepestPoint.dy < currentPoint.y - waveHeight) {
-        deepestPoint = { x: currentPoint.x, y: currentPoint.y, dy: currentPoint.y - waveHeight };
+        deepestPoint = {
+          x: currentPoint.x,
+          y: currentPoint.y,
+          dy: currentPoint.y - waveHeight,
+        };
       }
     }
 
@@ -96,16 +105,24 @@ let ball = {
       };
 
       this.updateVelocities(tanPoint1, tanPoint2);
+    } else {
+      state = "falling";
     }
   },
 
   updateVelocities(tanPoint1, tanPoint2) {
     let slopeAngle = Math.atan2(tanPoint2.y - tanPoint1.y, tanPoint2.x - tanPoint1.x);
+
+    const ballAngle = Math.atan2(this.vy, this.vx);
+    const angleDifference = Math.abs(slopeAngle - ballAngle) % Math.PI;
+    const speedCoefficient = 1 - angleDifference / (Math.PI / 2);
+    console.log(angleDifference);
+
     slopeAngle = (this.vx || tanPoint2.y - tanPoint1.y) > 0 ? slopeAngle : slopeAngle + Math.PI;
 
     const initialSpeed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
 
-    const friction = 0.9999;
+    const friction = 0.99;
 
     this.vx = initialSpeed * Math.cos(slopeAngle) * friction;
     this.vy = initialSpeed * Math.sin(slopeAngle) * friction;
