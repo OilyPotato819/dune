@@ -1,5 +1,5 @@
-const cnv = document.getElementById("canvas");
-const ctx = cnv.getContext("2d");
+const cnv = document.getElementById('canvas');
+const ctx = cnv.getContext('2d');
 
 cnv.width = 1000;
 cnv.height = 800;
@@ -11,29 +11,29 @@ const fMin = 0.001;
 const fMax = 0.01;
 const segmentNum = 100;
 const yOffset = 600;
-const ballColor = "#3e236e";
-const duneColor = "#c2b280";
+const ballColor = '#3e236e';
+const duneColor = '#c2b280';
 
-let timeout = 1;
+let timeout = 0;
 let waves = [];
 let gameWindow = { x: 0, y: 0 };
 
-document.addEventListener("mousedown", () => {
+document.addEventListener('mousedown', () => {
   ball.gravity += ball.gravityIncrease;
 });
 
-document.addEventListener("mouseup", () => {
+document.addEventListener('mouseup', () => {
   ball.gravity -= ball.gravityIncrease;
 });
 
 let ball = {
   x: 100,
-  y: 50,
+  y: 630,
   r: 30,
   gravity: 0.1,
   gravityIncrease: 0.3,
   vx: 0,
-  vy: 0,
+  vy: 10,
   mass: 5,
 
   draw() {
@@ -44,6 +44,8 @@ let ball = {
     ctx.beginPath();
     ctx.arc(this.x - gameWindow.x, this.y, this.r, 0, 2 * Math.PI);
     ctx.fill();
+
+    gameWindow.x += this.vx;
   },
 
   move() {
@@ -51,8 +53,6 @@ let ball = {
 
     this.x += this.vx;
     this.y += this.vy;
-
-    gameWindow.x += this.vx;
   },
 
   checkCollision() {
@@ -60,17 +60,9 @@ let ball = {
     let collision;
     let deepestPoint;
 
-    if (
-      Math.abs(evaluateWaves(this.x - this.r) - this.y) > this.r * 2 &&
-      Math.abs(evaluateWaves(this.x + this.r) - this.y) > this.r * 2
-    ) {
+    if (Math.abs(evaluateWaves(this.x - this.r) - this.y) > this.r * 2 && Math.abs(evaluateWaves(this.x + this.r) - this.y) > this.r * 2) {
       return;
     }
-
-    ctx.fillStyle = ballColor;
-    ctx.beginPath();
-    ctx.arc(this.x - gameWindow.x, this.y, this.r, 0, 2 * Math.PI);
-    ctx.fill();
 
     for (let n = 1; n < pointNum; n++) {
       const theta = Math.PI / pointNum;
@@ -85,14 +77,9 @@ let ball = {
         collision = true;
       }
 
-      ctx.fillStyle = "red";
-
       if (!deepestPoint || deepestPoint.dy < currentPoint.y - waveHeight) {
-        deepestPoint = { x: currentPoint.x, dy: currentPoint.y - waveHeight };
-        ctx.fillStyle = "blue";
+        deepestPoint = { x: currentPoint.x, y: currentPoint.y, dy: currentPoint.y - waveHeight };
       }
-
-      ctx.fillRect(currentPoint.x - 2 + gameWindow.x, currentPoint.y - 2, 4, 4);
     }
 
     if (collision) {
@@ -113,18 +100,12 @@ let ball = {
   },
 
   updateVelocities(tanPoint1, tanPoint2) {
-    let slopeAngle = Math.atan2(
-      tanPoint2.y - tanPoint1.y,
-      tanPoint2.x - tanPoint1.x
-    );
-    slopeAngle =
-      (this.vx || tanPoint2.y - tanPoint1.y) > 0
-        ? slopeAngle
-        : slopeAngle + Math.PI;
+    let slopeAngle = Math.atan2(tanPoint2.y - tanPoint1.y, tanPoint2.x - tanPoint1.x);
+    slopeAngle = (this.vx || tanPoint2.y - tanPoint1.y) > 0 ? slopeAngle : slopeAngle + Math.PI;
 
     const initialSpeed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
 
-    const friction = 1;
+    const friction = 0.9999;
 
     this.vx = initialSpeed * Math.cos(slopeAngle) * friction;
     this.vy = initialSpeed * Math.sin(slopeAngle) * friction;
@@ -156,7 +137,7 @@ function drawWaves() {
   const firstY = evaluateWaves(gameWindow.x);
 
   ctx.beginPath();
-  ctx.moveTo(0, firstY);
+  ctx.moveTo(gameWindow, firstY);
   for (let n = 1; n < segmentNum; n++) {
     const x = n * (cnv.width / segmentNum);
 
@@ -183,6 +164,7 @@ function evaluateWaves(x) {
 
 function animate() {
   ctx.clearRect(0, 0, cnv.width, cnv.height);
+
   drawWaves();
   ball.draw();
 
